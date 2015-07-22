@@ -9,8 +9,6 @@ uniform float theta;
 uniform float twist;
 uniform vec4 vColor;
 
-varying vec4 fColor;
-
 void main()
 {
 	float d = sqrt(pow(vPosition.x, 2.0) + pow(vPosition.y, 2.0));
@@ -21,8 +19,6 @@ void main()
     gl_Position.y =  s * vPosition.y + c * vPosition.x;
     gl_Position.z = 0.0;
     gl_Position.w = 1.0;
-
-    fColor = vColor;
 }
 
 </script>
@@ -32,10 +28,9 @@ void main()
 
 precision mediump float;
 
-varying vec4 fColor;
 void main()
 {
-    gl_FragColor = fColor;
+	gl_FragColor = vec4( 0.7, 0.0, 0.0, 1.0 );
 }
 
 </script>

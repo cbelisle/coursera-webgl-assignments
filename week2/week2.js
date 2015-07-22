@@ -32,8 +32,6 @@ var params = {
 	vertice_y3: vertices_pos[5],
 	twist: twist,
 	tessellation: numTimesToSubdivide,
-	bgcolor: bgcolor,
-	color: color,
 	theta: theta
 };
 
@@ -43,14 +41,6 @@ var gui;
 window.onload = function init() {
 	gui = new dat.GUI();
 
-	gui.addColor(params, 'bgcolor').name("Background color").onChange(function(value) {
-		bgcolor = value;
-		render();
-	});
-	gui.addColor(params, 'color').name("Foreground color").onChange(function(value) {
-		color = value;
-		render();
-	});
 	gui.add(params, 'twist', -70, 70).name("Twist").onChange(function(value){
 		twist = value;
 		render();
@@ -185,8 +175,6 @@ function render() {
 
     gl.uniform1f(thetaLoc, theta);
     gl.uniform1f(twistLoc, twist);
-
-    gl.uniform4f(colorLoc, hexToRgb(color).r / 255, hexToRgb(color).g / 255, hexToRgb(color).b / 255, 1);
 
     gl.drawArrays(gl.TRIANGLES, 0, points.length);
 
