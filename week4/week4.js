@@ -7,12 +7,24 @@ var gl;
 var maxNumTriangles = 5000;
 var maxNumVertices  = 3 * maxNumTriangles;
 var index = 0;
+var lineWidth = 1;
+
+var numLines = 0;
+var numPoints = 0;
+
+var numPointIndices = [];
+var numLineIndices = [];
+
+numPointIndices[0] = 0;
+numLineIndices[0] = 0;
+
+var startLines = [0];
+var startPoints = [0];
 
 var isDrawing = false;
 
 var vBuffer;
 var cBuffer;
-var vPsBuffer;
 
 // DAT.gui
 var gui;
@@ -21,8 +33,13 @@ var hexColor = "#000000";
 
 var params = {
     color: hexColor,
+    lineWidth: lineWidth,
     clear: function() {
         index = 0;
+        startLines = [];
+        startPoints = [];
+        numLineIndices = [];
+        numPointIndices = [];
     }
 };
 
@@ -42,22 +59,45 @@ function draw(event) {
     var c = vec4(color.r / 255, color.g / 255, color.b / 255, 1.0);
     gl.bufferSubData(gl.ARRAY_BUFFER, 16*index, flatten(c));
 
+    if (lineWidth === 1) {
+        numLineIndices[numLines]++;
+    }
+    else if (lineWidth === 2) {
+        numPointIndices[numPoints]++;
+    }
     index++;
 }
 
 function setupDrawingAppEvents(canvas) {
     canvas.addEventListener("mousedown", function(event){
       isDrawing = true;
+      if (lineWidth === 1) {
+        numLines++;
+        numLineIndices[numLines] = 0;
+        startLines[numLines] = index;
+        draw(event);
+      }
+      else if (lineWidth === 2) {
+        numPoints++;
+        numPointIndices[numPoints] = 0;
+        startPoints[numPoints] = index;
+      }
     });
 
     canvas.addEventListener("mouseup", function(event){
       isDrawing = false;
+      if (lineWidth === 1) {
+        draw(event);
+      }
     });
     
     canvas.addEventListener("mousemove", function(event){
-        if(isDrawing) {
-            draw(event);
-        }
+      if(isDrawing) {
+          if (lineWidth === 1) {
+              draw(event);
+          }
+          draw(event);
+      }
     });
 }
 
@@ -67,6 +107,9 @@ window.onload = function init() {
     gui.addColor(params, 'color').name("Color").onChange(function(value) {
         hexColor = value;
         render();
+    });
+    gui.add(params, 'lineWidth', 1, 2).step(1).name('Line Width').onChange(function(value) {
+        lineWidth = value;
     });
     gui.add(params, 'clear').name("Clear");    
 
@@ -117,7 +160,14 @@ function hexToRgb(hex) {
 
 function render() {
     gl.clear( gl.COLOR_BUFFER_BIT );
-    gl.drawArrays( gl.POINTS, 0, index );
+
+    for(var i=0; i<startLines.length; i++) {
+        gl.drawArrays( gl.LINES, startLines[i], numLineIndices[i] );
+    }
+
+    for(var i=0; i<startPoints.length; i++) {
+        gl.drawArrays( gl.POINTS, startPoints[i], numPointIndices[i] );
+    }
 
     window.requestAnimFrame(render);
 }
