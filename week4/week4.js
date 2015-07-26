@@ -40,6 +40,7 @@ var params = {
         startPoints = [];
         numLineIndices = [];
         numPointIndices = [];
+        gl.clear( gl.COLOR_BUFFER_BIT );
     }
 };
 
