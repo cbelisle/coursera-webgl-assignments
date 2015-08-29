@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<style>
+		html,body {
+			height: 100%;
+			margin: 0px;
+			padding: 0px;
+		}
+
+		#app {
+			display: inline-block;
+			border: solid 1px #000000;
+			height: auto;
+		}
+
+		.leftmenu, .rightmenu {
+			width: 200px;
+		}
+
+		.leftmenu, .rightmenu .submenu {
+			background-color: #eeeeee;
+			padding: 10px;
+			border-radius: 10px;
+			margin: 10px;
+		}
+
+		.leftmenu {
+			float: left;
+		}
+
+		.rightmenu {
+			float: right;
+		}
+
+		#gl-canvas {
+			vertical-align: top;
+			display: inline-block;
+			width: 512px;
+			height: 512px;
+		}
+
+		.submenu p {
+			margin: 0px;
+			font-weight: bold;
+		}
+
+		.submenu .title {
+			font-weight: bold;
+			text-align: center;
+		}
+
+		#objPicker {
+			width: 150px;
+		}
+
+		.lightPos {
+			width: 35px;
+		}
+	</style>
+</head>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+
+attribute vec4 vPosition;
+attribute vec4 vNormal;
+
+varying vec4 fColor;
+
+uniform mat4 transformMatrix;
+uniform mat4 modelViewMatrix;
+uniform mat4 projectionMatrix;
+uniform mat4 normalMatrix;
+uniform bool isDistanceAttenuation;
+
+uniform vec4 ambientProduct, materialDiffuse, materialSpecular;
+uniform float shininess;
+
+struct lightSource
+{
+	bool isActive;
+	vec4 position;
+	vec4 diffuse;
+	vec4 specular;
+};
+
+const int numberOfLights = 2;
+
+uniform lightSource lights[numberOfLights];
+
+void main()
+{
+	float a = 0.0, b = 0.0, c = 0.3;
+	vec3 pos = -(transformMatrix * modelViewMatrix * vPosition).xyz;
+	vec4 ambient = ambientProduct;
+	vec4 diffuse;
+	vec4 specular;
+
+	for (int i = 0; i < numberOfLights; i++)
+	{
+		if (lights[i].isActive)
+		{
+			vec3 L;
+
+			if(lights[i].position.w == 0.0) L = normalize(lights[i].position.xyz);
+    		else L = normalize( lights[i].position.xyz - pos );
+
+    		vec3 E = normalize( -pos );
+			vec3 H = normalize( L + E );
+
+			vec3 N = normalize((transformMatrix * modelViewMatrix * vNormal).xyz);
+
+			float Kd = max( dot(L, N), 0.0 );
+			float Ks = pow( max(dot(N, H), 0.0), shininess );
+
+			vec4 diffuseToApply = Kd * (lights[i].diffuse * materialDiffuse);
+			vec4 specularToApply = Ks * (lights[i].specular * materialSpecular);
+			if (isDistanceAttenuation)
+			{
+				float dist = length(lights[i].position.xyz - pos);
+				float attenuation = 1.0/(a + b*dist + c*dist*dist);
+				diffuseToApply *= attenuation;
+				specularToApply *= attenuation;
+			}
+    		diffuse += diffuseToApply;
+    		specular += specularToApply;
+
+    		if( dot(L, N) < 0.0 ) {
+				specular += vec4(0.0, 0.0, 0.0, 1.0);
+    		}
+		}
+	}
+
+    gl_Position = transformMatrix*projectionMatrix*modelViewMatrix*vPosition;
+
+    fColor = ambient + diffuse + specular;
+    fColor.a = 1.0;
+}
+
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+
+precision mediump float;
+
+varying vec4 fColor;
+
+void main()
+{
+	gl_FragColor = fColor;
+}
+
+</script>
+
+<script type="text/javascript" src="../common/webgl-utils.js"></script>
+<script type="text/javascript" src="../common/initShaders.js"></script>
+<script type="text/javascript" src="../common/MV.js"></script>
+
+<script type="text/javascript" src="globals.js"></script>
+<script type="text/javascript" src="transforms/rotate.js"></script>
+<script type="text/javascript" src="transforms/translate.js"></script>
+<script type="text/javascript" src="transforms/scale.js"></script>
+<script type="text/javascript" src="transforms/transform.js"></script>
+<script type="text/javascript" src="models/cone.js"></script>
+<script type="text/javascript" src="models/cylinder.js"></script>
+<script type="text/javascript" src="models/sphere.js"></script>
+<script type="text/javascript" src="assignment3.js"></script>
+<script type="text/javascript" src="app.js"></script>
+
+<body>
+
+<div id="app">
+	<div class="leftmenu">
+		<div class="submenu">
+			<select id="shapeChooser">
+				<option value="sphere">Sphere</option>
+				<option value="cone">Cone</option>
+				<option value="cylinder">Cylinder</option>
+			</select>
+			<button id="btnCreate">Create</button>
+		</div>
+
+		<div class="submenu">
+			<select id="objPicker" size="10">
+			</select>
+		</div>
+
+		<div class="submenu" id="sphereMenu" style="display:none">
+			<p>Sphere Menu</p>
+
+			<p>Latitude</p>
+			<input type="range" id="sphereLatitude" value="30" />
+
+			<p>Longitude</p>
+			<input type="range" id="sphereLongitude" value="30" />
+
+			<p>Radius</p>
+			<input type="range" id="sphereRadius" value="100" />
+		</div>
+
+		<div class="submenu" id="coneMenu" style="display:none">
+			<p>Cone Menu</p>
+
+			<p>Height</p>
+			<input type="range" id="coneHeight" value="30" />
+
+			<p>Radial Subdivisions</p>
+			<input type="range" id="coneRadialSubdiv" value="30" />
+
+			<p>Bottom Radius</p>
+			<input type="range" id="coneBottomRadius" value="100" />
+		</div>
+
+		<div class="submenu" id="cylinderMenu" style="display:none">
+			<p>Cylinder Menu</p>
+
+			<p>Height</p>
+			<input type="range" id="cylinderHeight" value="30" />
+
+			<p>Radial Subdivisions</p>
+			<input type="range" id="cylinderRadialSubdiv" value="30" />
+
+			<p>Radius</p>
+			<input type="range" id="cylinderRadius" value="100" />
+		</div>
+	</div>
+
+	<canvas id="gl-canvas" width="512" height="512">
+	HTML5 canvas element not supported
+	</canvas>
+
+	<div class="rightmenu">
+		<div class="submenu" id="Light">
+			<p class="title">Light</p>
+			<button id="btnPause">Pause</button>
+
+			<p>Active Light</p>
+			<select id="lightChooser">
+				<option value="both">Both</option>
+				<option value="light1">Light 1</option>
+				<option value="light2">Light 2</option>
+				<option value="none">None</option>
+			</select>
+
+			<p>Light 1</p>
+			<input type="text" id="light1x" class="lightPos" />
+			<input type="text" id="light1y" class="lightPos" />
+			<input type="text" id="light1z" class="lightPos" />
+			Diffuse: <input type="color" id="light1DiffuseColor" value="#FFFFFF" />
+			Specular: <input type="color" id="light1SpecularColor" value="#FFFFFF" />
+
+			<p>Light 2</p>
+			<input type="text" id="light2x" class="lightPos" />
+			<input type="text" id="light2y" class="lightPos" />
+			<input type="text" id="light2z" class="lightPos" />
+			Diffuse: <input type="color" id="light2DiffuseColor" value="#FFFFFF" />
+			Specular: <input type="color" id="light2SpecularColor" value="#FFFFFF" />
+			<p>&nbsp;</p>
+
+			Distance Att.
+			<input type="checkbox" id="distanceAtt" checked />
+			Ambient: <input type="color" id="ambientColor" value="#323232" />
+		</div>
+
+		<!--<div class="submenu" id="rotationMenu">
+			<p class="title">Rotation</p>
+
+			<p>Axis X</p>
+			<input type="range" id="rotateX" value="0" />
+
+			<p>Axis Y</p>
+			<input type="range" id="rotateY" value="0" />
+
+			<p>Axis Z</p>
+			<input type="range" id="rotateZ" value="0" />
+		</div>-->
+
+		<div class="submenu" id="translateMenu">
+			<p class="title">Translation</p>
+
+			<p>Axis X</p>
+			<input type="range" id="translateX" value="50" />
+
+			<p>Axis Y</p>
+			<input type="range" id="translateY" value="50" />
+
+			<p>Axis Z</p>
+			<input type="range" id="translateZ" value="50" />
+		</div>
+
+		<div class="submenu" id="scaleMenu">
+			<p class="title">Scale</p>
+
+			<p>Axis X</p>
+			<input type="range" id="scaleX" value="50" />
+
+			<p>Axis Y</p>
+			<input type="range" id="scaleY" value="50" />
+
+			<p>Axis Z</p>
+			<input type="range" id="scaleZ" value="50" />
+		</div>
+	</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,22 @@
+This assignment is an extension of the last assignment. In Assignment 3 we were only able to see the three-dimensionality of the objects by displaying lines. In this assignment, we will be able to get a more realistic image by using lighting. Thus, you will have to assign material properties to your objects, either by sending them from our JS file or assigning them in one of the shaders, and you will have to add light sources.
+
+Your application should show diffuse, ambient and specular lighting. The light sources should be different from each other and move as your application runs.
+
+Much of the code you will need for this assignment can be obtained (and altered) from the examples on my website of lighting from Chapter 6 in my textbook.
+
+Minimum requirement (5 points): Application displays at least two of three types of objects (spheres, cylinders (caps on top and bottom not required), cones (bottom not required)) with two moving light sources. One instance of each type is acceptable. The lighting calculation should be done in the shaders.
+
+Additional credit (1-5 points) for
+ (1) ability to turn on/off each light source. You may want to add a little global ambient light so you can still see your objects with the lights out.
+ (2) adding distance attenuation for the lights.
+ (3) making light source and/or object locations interactive
+
+
+ ------------------------------------------------------
+
+  - Add and make quantities field available + update 
+ - Object material menu (color picker for 3 parts + slider for shininess + checkbox for global)
+
+ 
+  - Move transformations in shaders
+ - Fix rotation
