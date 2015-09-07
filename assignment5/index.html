@@ -1,0 +1,173 @@
+<html>
+<head>
+<title>Assignment 5</title>
+	<style>
+		html,body {
+			height: 100%;
+			margin: 0px;
+			padding: 0px;
+		}
+
+		#app {
+			display: inline-block;
+			border: solid 1px #000000;
+			height: auto;
+		}
+
+		.leftmenu, .rightmenu {
+			width: 200px;
+		}
+
+		.leftmenu, .rightmenu .submenu {
+			background-color: #eeeeee;
+			padding: 10px;
+			border-radius: 10px;
+			margin: 10px;
+		}
+
+		.leftmenu {
+			float: left;
+		}
+
+		.rightmenu {
+			float: right;
+		}
+
+		#gl-canvas {
+			vertical-align: top;
+			display: inline-block;
+			width: 512px;
+			height: 512px;
+		}
+
+		.submenu p {
+			margin: 0px;
+			font-weight: bold;
+		}
+
+		.submenu .title {
+			font-weight: bold;
+			text-align: center;
+		}
+
+		#objPicker {
+			width: 150px;
+		}
+
+		.lightPos {
+			width: 35px;
+		}
+	</style>
+</head>
+
+<script id="vertex-shader" type="x-shader/x-vertex">
+attribute vec4 vPosition;
+attribute vec2 vTexCoord;
+
+varying vec4 fColor;
+varying vec2 fTexCoord;
+varying float fTextureId;
+
+uniform vec3 theta;
+uniform float textureId;
+
+void main() 
+{
+    // Compute the sines and cosines of theta for each of
+    //   the three axes in one computation.
+    vec3 angles = radians( theta );
+    vec3 c = cos( angles );
+    vec3 s = sin( angles );
+
+    // Remeber: thse matrices are column-major
+    mat4 rx = mat4( 1.0,  0.0,  0.0, 0.0,
+				    0.0,  c.x,  s.x, 0.0,
+				    0.0, -s.x,  c.x, 0.0,
+				    0.0,  0.0,  0.0, 1.0 );
+
+    mat4 ry = mat4( c.y, 0.0, -s.y, 0.0,
+				    0.0, 1.0,  0.0, 0.0,
+				    s.y, 0.0,  c.y, 0.0,
+				    0.0, 0.0,  0.0, 1.0 );
+
+
+    mat4 rz = mat4( c.z, -s.z, 0.0, 0.0,
+				    s.z,  c.z, 0.0, 0.0,
+				    0.0,  0.0, 1.0, 0.0,
+				    0.0,  0.0, 0.0, 1.0 );
+    
+    fColor = vec4(1.0, 1.0, 1.0, 1.0);
+    fTexCoord = vTexCoord;
+    fTextureId = textureId;
+    gl_Position = rz * ry * rx * vPosition;
+} 
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+precision mediump float;
+
+varying vec4 fColor;
+varying vec2 fTexCoord;
+varying float fTextureId;
+
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+uniform sampler2D texture2;
+
+void
+main()
+{
+	if (fTextureId == 0.1) {
+		gl_FragColor = fColor*texture2D( texture0, fTexCoord );
+	}
+	else if (fTextureId == 0.2) {
+		gl_FragColor = fColor*texture2D( texture1, fTexCoord );
+	}
+	else if (fTextureId == 0.3) {
+		gl_FragColor = fColor*texture2D( texture2, fTexCoord );
+	}
+}
+</script>
+
+<script type="text/javascript" src="../common/webgl-utils.js"></script>
+<script type="text/javascript" src="../common/initShaders.js"></script>
+<script type="text/javascript" src="../common/MV.js"></script>
+<script type="text/javascript" src="globals.js"></script>
+<script type="text/javascript" src="models/sphere.js"></script>
+<script type="text/javascript" src="assignment5.js"></script>
+
+<body>
+
+<div id="app">
+	<canvas id="gl-canvas" width="512" height="512">
+	HTML5 canvas element not supported
+	</canvas>
+
+	<div class="rightmenu">
+		<div class="submenu" id="chooser">
+			<select id="texChooser">
+				<option value="chessboard">Chessboard</option>
+				<option value="chessboard-planar">Chessboard (Planar)</option>
+				<option value="chessboard-cylinder">Chessboard (Cylinder)</option>
+				<option value="earth">Standard Image (earth)</option>
+				<option value="pattern">Image - Regular pattern</option>
+			</select>
+		</div>
+
+		<div class="submenu" id="rotation">
+			<p class="title">Rotation</p>
+
+			<p>Axis X</p>
+			<input type="range" id="rotateX" value="0" />
+
+			<p>Axis Y</p>
+			<input type="range" id="rotateY" value="0" />
+
+			<p>Axis Z</p>
+			<input type="range" id="rotateZ" value="0" />
+		</div>
+	</div>
+</div>
+
+</body>
+</html>
